@@ -3,6 +3,7 @@ from requests import get
 import re
 import urllib.request
 from instapy_cli import client
+import random
 
 def getsoup(url):
     hdrs = {'user-agent': 'Chrome/75.0'}
@@ -10,11 +11,12 @@ def getsoup(url):
     return BeautifulSoup(r.text, 'html.parser')
 
 
-# gets all the links to the comments so we can retrieve image from the post
+# gets all the links to the comments sections of the post so we can retrieve images from the post
 def getpostlinks(url):
     retList = []
     soup = getsoup(url)
     urlToSearch = url + "comments"
+    # every post has the url followed by comments, we can get this by using regex
     for post in soup.find_all('a', attrs={'href': re.compile("^"+re.escape(urlToSearch))}):
         retList.append(post.get('href'))
     return retList
@@ -23,15 +25,20 @@ def getpostlinks(url):
 # gets a singular link to the image source
 def getimgsource(url):
     soup = getsoup(url)
+    # images in the comment portion of posts have the img tag, we find the source this way
+    print('getting imgsource')
     for img in soup.find_all('img', alt=True):
         if img['alt'] == 'Post image':
             return img['src']
+    print('completed getting imgsource')
 
 
 # given the list of links to the images, downloads all images in the list
 def downloadimgs(imgLinkList):
     ctr = 0
+    print('beginning to download images')
     for img in imgLinkList:
+        # sometimes, the bot retrieves a pinned post from the reddit so we skip image source if we encounter it
         if img is None:
             continue
         else:
@@ -39,22 +46,44 @@ def downloadimgs(imgLinkList):
             ctr += 1
     print("downloaded " + str(ctr) + " images")
 
-#TODO, GET TITLE OF POST YOU ARE SCRAPING
 
-'''
+def gettitle(url):
+    soup = getsoup(url)
+    print('getting title')
+    for s in soup.find_all('h1'):
+        return s.text
+
+
+def posttoinstagram(username, password, image, text):
+    print('Beginning to post to instagram')
+    with client(username, password) as cli:
+        cli.upload(image, text)
+    print('Successfully posted to instagram')
+
+
 linkList = getpostlinks('https://www.reddit.com/r/pics/')
+# pops the pinned post (not that great of a solution but will work for now)
+linkList.pop(0)
 picLinkList = []
-for link in linkList:
+titleLinkList = []
+L = 0
+# TODO, Find out if post is a "pinned post" and completely ignore that post
+# TODO, Change to OOP because it is far more elegant than this current design (later)
+for index, link in enumerate(linkList):
     picLinkList.append(getimgsource(link))
+    titleLinkList.append(gettitle(link))
 downloadimgs(picLinkList)
-'''
 
 # ok it posts to Instagram but i need to automate it, and you kinda need to download the images in the
 # local directory
-username = str(input('giv username: '))
-password = str(input('giv pass: '))
-image = 'post0.jpg'
-text = 'please post'
 
-with client(username, password) as cli:
-    cli.upload(image,text)
+username = str(input('Username login: '))
+password = str(input('Password login: '))
+randNum = random.randint(0, len(linkList))
+image = 'post' + str(randNum) + '.jpg'
+text = titleLinkList[randNum]
+
+posttoinstagram(username, password, image, text)
+# Remove post so it isn't possible to post again
+titleLinkList.pop(randNum)
+picLinkList.pop(randNum)
