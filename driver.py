@@ -5,6 +5,7 @@ import urllib.request
 from instapy_cli import client
 import random
 
+
 def getsoup(url):
     hdrs = {'user-agent': 'Chrome/75.0'}
     r = get(url, headers = hdrs)
@@ -61,25 +62,23 @@ def posttoinstagram(username, password, image, text):
     print('Successfully posted to instagram')
 
 
+
 linkList = getpostlinks('https://www.reddit.com/r/pics/')
 # pops the pinned post (not that great of a solution but will work for now)
 linkList.pop(0)
 picLinkList = []
 titleLinkList = []
-L = 0
-# TODO, Find out if post is a "pinned post" and completely ignore that post
-# TODO, Change to OOP because it is far more elegant than this current design (later)
 for index, link in enumerate(linkList):
     picLinkList.append(getimgsource(link))
     titleLinkList.append(gettitle(link))
 downloadimgs(picLinkList)
 
-# ok it posts to Instagram but i need to automate it, and you kinda need to download the images in the
-# local directory
+# TODO, Find out if post is a "pinned post" and completely ignore that post
+# TODO, Change to OOP because it is far more elegant than this current design (later)
 
 username = str(input('Username login: '))
 password = str(input('Password login: '))
-randNum = random.randint(0, len(linkList))
+randNum = random.randint(0, 6)
 image = 'post' + str(randNum) + '.jpg'
 text = titleLinkList[randNum]
 
